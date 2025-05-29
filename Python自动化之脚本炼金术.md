@@ -33,18 +33,26 @@ def get_extension_folder(ext):
 
 
 def organize_folder(folder_path):
-    for filename in os.listdir(folder_path):  # 遍历文件夹中的所有文件名
-        full_path = os.path.join(folder_path, filename)  # 得到完整路径
-        if os.path.isfile(full_path):  # 只处理文件，不处理子目录
-            _, ext = os.path.splitext(filename)  # 拆分扩展名（如 .txt）
-            folder_name = get_extension_folder(ext)  # 转换为目标子文件夹名
-            dest_folder = os.path.join(folder_path, folder_name)  # 拼接出目标子文件夹路径
-
-            create_folder_if_not_exists(dest_folder)  # 如有必要，创建子文件夹
-            new_path = os.path.join(dest_folder, filename)  # 移动后的目标路径
-
-            logging.info(f'Moving {filename} → {folder_name}')  # 记录日志
-            shutil.move(full_path, new_path)  # 执行文件移动
+    for filename in os.listdir(folder_path):  
+        # 遍历文件夹中的所有文件名
+        full_path = os.path.join(folder_path, filename)  
+        # 得到完整路径
+        if os.path.isfile(full_path):  
+            # 只处理文件，不处理子目录
+            _, ext = os.path.splitext(filename)  
+            # 拆分扩展名（如 .txt）
+            folder_name = get_extension_folder(ext)  
+            # 转换为目标子文件夹名
+            dest_folder = os.path.join(folder_path, folder_name)  
+            # 拼接出目标子文件夹路径
+            create_folder_if_not_exists(dest_folder)  
+            # 如有必要，创建子文件夹
+            new_path = os.path.join(dest_folder, filename)  
+            # 移动后的目标路径
+            logging.info(f'Moving {filename} → {folder_name}')  
+            # 记录日志
+            shutil.move(full_path, new_path)  
+            # 执行文件移动
 
 
 if __name__ == '__main__':
@@ -202,7 +210,7 @@ logger.debug('这是debug级别的调试信息')			# 这个会输出到控制台
 logger.info('这是info级别的调试信息')			# 这个会输出到控制台和文件
 ```
 
-## 2、自动化批量重命名工具（batch_renamer）
+## 2、自动化批量重命名工具（batch_renamer-renamer.py）
 
 ```python 
 # -*- coding: utf-8 -*-
@@ -233,23 +241,143 @@ batch_renamer(
     r'C:\Users\Administrator\Desktop\Python资料及其他\Python_Study\StudyPython\Pyton之自动化脚本炼金术\batch_renamer\test')
 ```
 
-### 2.1 自动识别文件中的关键字
+### 2.1 自动识别文件中的关键字(batch_renamer-searcher.py)
 
 ```python
+# -*- coding: utf-8 -*-
+import os
+import logging
 
+logging.basicConfig(filename='../log_searcher/log2.txt',
+                    level=logging.DEBUG,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+def find_keyword(path, key):
+    """
+    :param path: 需要识别的路径
+    :param key: 关键字
+    :return:
+    """
+    for name in os.listdir(path):
+        # 遍历文件夹中的文件
+        if name.endswith('.txt') or name.endswith('.log'):
+            # 判断文件的后缀是否是 txt 或者 log 结尾
+            new_name = os.path.join(path, name)
+            # 将文件拼接成完整路径
+            with open(new_name, 'r', encoding='utf-8') as file:
+                # 对遍历的文件执行read操作
+                for line_number, mess in enumerate(file, start=1):
+                    # enumerate 为每一行增加行号，从1开始,并返回 行号和对应的数据
+                    if key in mess:
+                        # 判断key是否在数据中
+                        print(f'找到 {key} 在 {name} 中的 {line_number}行')
+                        print(mess)
+                        logging.info(f'{key} to {name} in {line_number} line')
+                    else:
+                        print('未找到')
+find_keyword(
+    r'C:\Users\Administrator\Desktop\Python资料及其他\Python_Study\StudyPython\Pyton之自动化脚本炼金术\batch_renamer\test',
+    'INFO')
 ```
 
+### 2.2 自动获取文件大小及最后修改时间(batch_renamer-file_lister.py)
 
+```python
+# -*- coding: utf-8 -*-
+import os
+import logging
+from datetime import datetime
 
+logging.basicConfig(filename='logger.txt',
+                    level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# 定义日志相关内容
+def file_lister(path):
+    if os.path.isdir(path):
+        for root, dirs, files in os.walk(path):
+        # walk 遍历所有子目录，返回一个三元组：目录路径、子目录名、文件名
+            for name in files:
+                # 获取文件夹下的文件
+                file_path = os.path.join(root, name)
+                # 拼接完整路径
+                size = os.path.getsize(file_path)
+                # 获取文件大小，单位为bite
+                times = os.path.getmtime(file_path)
+                mod_time = datetime.fromtimestamp(times).strftime('%Y-%m-%d %H:%M:%S')
+                # 获取时间及转换时间
+                logging.info(f' - {name} - {size} - {mod_time}')
+                # 写入log
+file_lister(
+    r'C:\Users\Administrator\Desktop\Python资料及其他\Python_Study\StudyPython\Pyton之自动化脚本炼金术\batch_renamer\test')
+```
 
+### 2.3 识别目录下图片的分辨率(batch_renamer-image_checher.py)
 
+```python
+# -*- coding: utf-8 -*-
+import os
+import logging
+from PIL import Image
 
+logging.basicConfig(filename='image.log',
+                    level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+def image_checker(path):
+    image_extensions = ('.jpg', '.jpeg', '.png', '.gif')
+    for filename in os.listdir(path):
+        if filename.endswith(image_extensions):
+            file_path = os.path.join(path, filename)
+            with Image.open(file_path) as image:
+                width, height = image.size
+                file=file_path[-11:]
+                logging.info(f' - {file} has {width} p x {height} p')
+image_checker(r'C:\Users\Administrator\Desktop\Python资料及其他\Python_Study\StudyPython\Pyton之自动化脚本炼金术\image')
+```
 
+相较于上面，这个脚本添加了计数和排序功能
 
+```Python
+# -*- coding: utf-8 -*-
+import os
+import logging
+from PIL import Image
 
+logging.basicConfig(filename='image.log', level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_size = []
+def image_checker(path):
+    image_extensions = ('.jpg', '.jpeg', '.png', '.gif')
+    # 添加可以识别的后缀
+    for filename in os.listdir(path):
+        # 遍历文件夹，不包含子文件夹
+        if filename.endswith(image_extensions):
+            # 判断文件后缀
+            file_path = os.path.join(path, filename)
+            # 完整路径
+            with Image.open(file_path) as image:
+                # 用pillow打开图片
+                width, height = image.size
+                # 获取文件的尺寸
+                file = file_path[-11:]
+                file_size.append((file, width, height))
+                logging.info(f' - {file} has {width} p x {height} p')
 
+    total = len(file_size)
+    if total > 0:
+        logging.info(f'   总图片数：{total}')
+        sorted_images = sorted(file_size, key=lambda x: x[1] * x[2])
+        # sorted将file_size中下标1和2相乘的值以降序排列
+        small = sorted_images[0]
+        # 为分辨率最小
+        large = sorted_images[-1]
+        # 分辨率最大
+        logging.info(f'最小尺寸图片：{small[0]}，尺寸：{small[1]}x{small[2]}')
+        logging.info(f'最大尺寸图片：{large[0]}，尺寸：{large[1]}x{large[2]}')
+    else:
+        print('总数为0，不进行排序')
+image_checker(r'C:\Users\Administrator\Desktop\Python资料及其他\Python_Study\StudyPython\Pyton之自动化脚本炼金术\image')
+```
 
-
+## 3、PDF合并工具
 
 
 
